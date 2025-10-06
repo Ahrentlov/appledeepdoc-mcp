@@ -7,11 +7,7 @@ import os
 from pathlib import Path
 from typing import List, Dict
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+# Get logger instance (uses default or parent configuration)
 logger = logging.getLogger(__name__)
 
 

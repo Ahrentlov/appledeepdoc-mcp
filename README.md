@@ -105,7 +105,6 @@ After updating the config, restart Claude Desktop to load the MCP server.
 ## Environment Variables
 
 - `XCODE_DOC_PATH`: Override default Xcode documentation search path
-- `MCP_LOG_LEVEL`: Set logging level (DEBUG, INFO, WARNING, ERROR)
 
 ## License
 
