@@ -1,0 +1,112 @@
+# Apple Deep Docs MCP
+
+Access hidden Xcode documentation and Apple developer resources through the Model Context Protocol.
+
+## Overview
+
+This MCP server provides comprehensive access to Apple's development documentation ecosystem, including:
+
+- **Hidden Xcode Documentation**: Searches the `AdditionalDocumentation` folder inside Xcode.app containing advanced SwiftUI patterns, Liquid Glass design guides for iOS 26+, and framework-specific implementation details not available on Apple's public developer site
+- **Apple Developer API**: Fetches and parses structured documentation from developer.apple.com
+- **Swift Evolution Proposals**: Searches 500+ proposals to understand the "why" behind language features
+- **Swift Open Source Repositories**: Searches across all Apple/SwiftLang GitHub repositories for implementation examples
+- **WWDC Session Notes**: Accesses community-curated WWDC session summaries for performance optimization and architecture patterns
+
+## Requirements
+
+- Python 3.10+
+- Xcode installed (for local documentation features)
+
+## Installation
+
+1. Clone this repository:
+```bash
+git clone https://github.com/yourusername/appledeepdocs-mcp.git
+cd appledeepdocs-mcp
+```
+
+2. Set up the Python environment:
+```bash
+# Create virtual environment
+python3 -m venv venv
+
+# Install dependencies
+./venv/bin/pip install fastmcp
+```
+
+## Configuration
+
+Add to your Claude Desktop config file:
+
+```json
+{
+  "mcpServers": {
+    "apple-deep-docs": {
+      "command": "/path/to/appledeepdocs-mcp/run.sh"
+    }
+  }
+}
+```
+
+Replace `/path/to/appledeepdocs-mcp` with the full path where you cloned this repository. The `run.sh` script automatically handles the virtual environment.
+
+**Config file locations:**
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+- Linux: `~/.config/Claude/claude_desktop_config.json`
+
+After updating the config, restart Claude Desktop to load the MCP server.
+
+## Project Structure
+
+```
+├── main.py               # Entry point for the MCP server
+├── config.py            # Configuration and Xcode path discovery
+├── tools.py             # MCP tool definitions and input validation
+├── docs/                # Documentation access modules
+│   ├── local_docs.py    # Xcode's hidden local documentation
+│   └── apple_docs.py    # Apple Developer website API access
+├── evolution/           # Swift language evolution
+│   └── swift_evolution.py
+├── repos/               # GitHub repository searching
+│   └── swift_repos.py
+├── suggestions/         # Intelligent suggestion system
+│   └── suggestions.py   # Centralized suggestion engine
+├── wwdc/                # WWDC session resources
+│   └── wwdc_notes.py
+└── pyproject.toml       # Package configuration
+```
+
+## Available Tools
+
+### Local Documentation
+- `search_docs` - Search Xcode's hidden documentation
+- `get_document` - Retrieve full content of a specific document
+- `list_documents` - List all available documentation files
+- `get_xcode_versions` - Get installed Xcode versions with documentation
+
+### Apple Developer Resources
+- `fetch_apple_documentation` - Fetch structured docs from developer.apple.com
+- `search_apple_online` - Search both local and online Apple documentation
+- `get_framework_info` - Get direct documentation URL for any framework
+
+### Swift Evolution
+- `search_swift_evolution` - Search Swift Evolution proposals
+- `get_swift_evolution_proposal` - Get details of a specific proposal
+
+### GitHub Resources
+- `search_swift_repos` - Search across all Apple/SwiftLang repositories
+- `fetch_github_file` - Fetch source code from GitHub repositories
+
+### WWDC Resources
+- `search_wwdc_notes` - Search WWDC session notes and transcripts
+- `get_wwdc_session` - Get WWDC session URLs from session ID
+
+## Environment Variables
+
+- `XCODE_DOC_PATH`: Override default Xcode documentation search path
+- `MCP_LOG_LEVEL`: Set logging level (DEBUG, INFO, WARNING, ERROR)
+
+## License
+
+MIT
