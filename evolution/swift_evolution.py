@@ -83,17 +83,19 @@ class SwiftEvolution:
 
     def search_proposals(self, feature: str) -> Dict:
         """
-        Search Swift Evolution proposals by feature name or version.
+        Search Swift Evolution proposals by feature name, version, or status.
 
         This method implements a relevance-based scoring system:
         - Exact version match: +100 points
         - Partial version match: +50 points
+        - Status match: +15 points (e.g., 'rejected', 'withdrawn', 'returnedForRevision')
         - Feature in title: +10 points
         - Feature in summary: +5 points
 
         Args:
-            feature: Feature name or Swift version to search for
-                    Examples: 'async', 'Swift 6', 'actors', 'property wrapper'
+            feature: Feature name, Swift version, or proposal status to search for
+                    Examples: 'async', 'Swift 6', 'actors', 'property wrapper',
+                             'rejected', 'withdrawn', 'returnedForRevision'
 
         Returns:
             Dictionary containing:
@@ -135,11 +137,14 @@ class SwiftEvolution:
             # Text-based scoring
             title = proposal.get('title', '').lower()
             summary = proposal.get('summary', '').lower()
+            status_state = status.get('state', '').lower()
 
             if feature_lower in title:
                 score += 10  # Title matches are more relevant
             if feature_lower in summary:
                 score += 5   # Summary matches are less relevant
+            if feature_lower in status_state:
+                score += 15  # Status matches are highly relevant for finding proposals by state
 
             # Only include proposals with positive scores
             if score > 0:
