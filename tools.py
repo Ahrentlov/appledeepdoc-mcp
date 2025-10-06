@@ -456,20 +456,3 @@ def get_wwdc_session(session_id: str) -> Dict:
         Session URLs for notes and videos
     """
     return wwdc_notes.get_session_info(session_id)
-
-
-# ============================================================================
-# SERVER INITIALIZATION
-# ============================================================================
-
-if __name__ == "__main__":
-    logger.info("Initializing Apple Documentation MCP Server...")
-    logger.info("Loading modules:")
-    logger.info("  ✓ Local documentation search (docs/local_docs.py)")
-    logger.info("  ✓ Apple API fetching (docs/apple_docs.py)")
-    logger.info("  ✓ Swift Evolution proposals (evolution/swift_evolution.py)")
-    logger.info("  ✓ Swift repositories search (repos/swift_repos.py)")
-    logger.info("  ✓ WWDC session notes (wwdc/wwdc_notes.py)")
-    logger.info("  ✓ Suggestion engine (suggestions.py)")
-    logger.info("MCP server ready with intelligent tool suggestions")
-    mcp.run()
