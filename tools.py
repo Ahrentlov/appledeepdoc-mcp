@@ -18,7 +18,7 @@ while this file focuses on MCP interface definition and input sanitization.
 
 from typing import Dict, List, Optional
 from fastmcp import FastMCP
-from config import Config, logger
+from config import Config
 
 # Import specialized modules - each handles a specific documentation source
 # These modules are designed to be independent and maintainable

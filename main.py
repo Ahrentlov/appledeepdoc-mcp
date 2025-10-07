@@ -4,7 +4,7 @@ Main entry point for Xcode Documentation MCP Server.
 """
 
 import sys
-from config import Config, logger
+from config import logger
 from tools import mcp
 
 
