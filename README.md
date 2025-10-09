@@ -36,6 +36,29 @@ python3 -m venv venv
 
 ## Configuration
 
+### Claude Code
+For Claude Code, you need to add the MCP server using the following CLI commands:
+
+**Make sure run.sh is executable**
+```bash
+chmod +x /path/to/appledeepdocs-mcp/run.sh
+```
+
+**Add the MCP server to the local Claude Code project config**
+
+Navigate to the project folder where you will be activating Claude Code, then run the following command to register the MCP server:
+```bash
+claude mcp add --transport stdio apple-deep-docs /path/to/appledeepdocs-mcp/run.sh
+```
+
+**Verify it was added**
+```bash
+claude mcp list
+```
+
+Now when you activate `claude` in this folder, it will have the MCP server available.
+
+### Claude Desktop
 Add to your Claude Desktop config file:
 
 ```json
