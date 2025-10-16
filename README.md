@@ -21,8 +21,8 @@ This MCP server provides comprehensive access to Apple's development documentati
 
 1. Clone this repository:
 ```bash
-git clone https://github.com/yourusername/appledeepdocs-mcp.git
-cd appledeepdocs-mcp
+git clone https://github.com/Ahrentlov/appledeepdoc-mcp.git
+cd appledeepdoc-mcp
 ```
 
 2. Set up the Python environment:
@@ -41,14 +41,14 @@ For Claude Code, you need to add the MCP server using the following CLI commands
 
 **Make sure run.sh is executable**
 ```bash
-chmod +x /path/to/appledeepdocs-mcp/run.sh
+chmod +x /path/to/appledeepdoc-mcp/run.sh
 ```
 
 **Add the MCP server to the local Claude Code project config**
 
 Navigate to the project folder where you will be activating Claude Code, then run the following command to register the MCP server:
 ```bash
-claude mcp add --transport stdio apple-deep-docs /path/to/appledeepdocs-mcp/run.sh
+claude mcp add --transport stdio apple-deep-docs /path/to/appledeepdoc-mcp/run.sh
 ```
 
 **Verify it was added**
@@ -65,13 +65,21 @@ Add to your Claude Desktop config file:
 {
   "mcpServers": {
     "apple-deep-docs": {
-      "command": "/path/to/appledeepdocs-mcp/run.sh"
+      "command": "/path/to/appledeepdoc-mcp/run.sh"
     }
   }
 }
 ```
 
-Replace `/path/to/appledeepdocs-mcp` with the full path where you cloned this repository. The `run.sh` script automatically handles the virtual environment.
+### GPT-Codex
+Add to `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.apple-deep-docs]
+"command" = "/path/to/appledeepdoc-mcp/run.sh"
+```
+
+Replace `/path/to/appledeepdoc-mcp` with the full path where you cloned this repository. The `run.sh` script automatically handles the virtual environment.
 
 **Config file locations:**
 - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
