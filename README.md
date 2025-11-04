@@ -133,6 +133,10 @@ After updating the config, restart Claude Desktop to load the MCP server.
 - `search_wwdc_notes` - Search WWDC session notes and transcripts
 - `get_wwdc_session` - Get WWDC session URLs from session ID
 
+### Human Interface Guidelines
+- `search_human_interface_guidelines` - Search Apple's HIG for design patterns and best practices
+- `list_human_interface_guidelines_platforms` - List all available platforms with HIG links
+
 ## Environment Variables
 
 - `XCODE_DOC_PATH`: Override default Xcode documentation search path

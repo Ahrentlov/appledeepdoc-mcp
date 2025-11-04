@@ -19,6 +19,7 @@ def main():
         logger.info("  ✓ Swift Evolution proposals (evolution/swift_evolution.py)")
         logger.info("  ✓ Swift repositories search (repos/swift_repos.py)")
         logger.info("  ✓ WWDC session notes (wwdc/wwdc_notes.py)")
+        logger.info("  ✓ Human Interface Guidelines (design/human_interface_guidelines.py)")
 
         # Run the MCP server via stdio
         logger.info("Starting MCP server via stdio...")

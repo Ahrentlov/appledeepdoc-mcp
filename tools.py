@@ -27,6 +27,7 @@ from docs.apple_docs import apple_docs      # Apple Developer website API access
 from evolution.swift_evolution import evolution  # Swift language evolution tracking
 from repos.swift_repos import swift_repos   # GitHub repository searching
 from wwdc.wwdc_notes import wwdc_notes      # WWDC session notes and transcripts
+from design.human_interface_guidelines import human_interface_guidelines  # Human Interface Guidelines
 from suggestions.suggestions import suggestion_engine   # Centralized suggestion system
 
 # Initialize the FastMCP server with configuration
@@ -456,3 +457,72 @@ def get_wwdc_session(session_id: str) -> Dict:
         Session URLs for notes and videos
     """
     return wwdc_notes.get_session_info(session_id)
+
+
+# ============================================================================
+# HUMAN INTERFACE GUIDELINES TOOLS
+# ============================================================================
+
+@mcp.tool()
+def search_human_interface_guidelines(query: str, platform: Optional[str] = None) -> Dict:
+    """
+    Search Apple's Human Interface Guidelines for design patterns and best practices.
+
+    Find design guidance for creating exceptional user experiences across all Apple
+    platforms including iOS, macOS, tvOS, watchOS, and visionOS.
+
+    Example queries:
+    - "navigation" - Find navigation design patterns
+    - "buttons" - Button design guidelines
+    - "dark mode" - Dark mode design guidance
+    - "accessibility" - Accessibility best practices
+    - "color" - Color usage guidelines
+    - "typography" - Typography and font guidance
+
+    Args:
+        query: Design topic or keyword to search for
+        platform: Optional platform filter (ios, macos, tvos, watchos, visionos)
+
+    Returns:
+        Dictionary containing:
+        - query: The search term used
+        - platform: Platform filter if specified
+        - base_url: Human Interface Guidelines home page
+        - search_url: Google site search URL for the query
+        - direct_link: Direct link to Human Interface Guidelines
+        - platform_url: Platform-specific URL (if platform specified)
+        - platform_search: Platform-filtered search URL (if platform specified)
+    """
+    # Input validation
+    if not query or not query.strip():
+        return {
+            "error": "Empty query",
+            "message": "Please provide a design topic or keyword to search for"
+        }
+
+    if len(query) > 500:
+        return {
+            "error": "Query too long",
+            "message": "Maximum query length is 500 characters"
+        }
+
+    # Validate platform if provided
+    if platform and platform.lower() not in ["ios", "macos", "tvos", "watchos", "visionos"]:
+        return {
+            "error": "Invalid platform",
+            "message": "Platform must be one of: ios, macos, tvos, watchos, visionos"
+        }
+
+    results = human_interface_guidelines.search_guidelines(query.strip(), platform)
+    return add_suggestions(results, "search_human_interface_guidelines", query)
+
+
+@mcp.tool()
+def list_human_interface_guidelines_platforms() -> List[Dict]:
+    """
+    List all Apple platforms with their Human Interface Guidelines links.
+
+    Returns:
+        List of platforms with URLs to their specific design guidelines
+    """
+    return human_interface_guidelines.list_platforms()
