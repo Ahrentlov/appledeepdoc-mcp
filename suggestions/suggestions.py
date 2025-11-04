@@ -17,6 +17,7 @@ class SuggestionEngine:
             "search_swift_evolution": ["search_swift_repos", "fetch_github_file"],
             "search_swift_repos": ["fetch_github_file"],
             "search_wwdc_notes": ["search_swift_repos"],
+            "search_human_interface_guidelines": ["search_docs", "search_apple_online"],
         }
 
         # Simple keyword to tool mapping
@@ -25,6 +26,7 @@ class SuggestionEngine:
             "how|implement|build": ["search_swift_repos", "search_wwdc_notes"],
             "why|design|rationale": ["search_swift_evolution"],
             "class|struct|protocol": ["fetch_apple_documentation", "search_apple_online"],
+            "design|ui|ux|interface|button|navigation|layout|color|typography": ["search_human_interface_guidelines"],
         }
 
     def get_suggestions(self, context: Dict) -> List[Dict]:
@@ -72,6 +74,7 @@ class SuggestionEngine:
             "fetch_github_file": "Fetch specific source files",
             "search_swift_evolution": "Understand feature design rationale",
             "fetch_apple_documentation": "Get detailed API documentation",
+            "search_human_interface_guidelines": "Find design patterns and UI best practices",
         }
         return reasons.get(tool, f"Try {tool}")
 
