@@ -4,13 +4,16 @@ Access hidden Xcode documentation and Apple developer resources through the Mode
 
 ## Overview
 
-This MCP server provides comprehensive access to Apple's development documentation ecosystem, including:
+Modern Apple documentation uses the DocC rendering system which requires JavaScript to dynamically load content, making it inaccessible to some LLMs. This MCP server circumvents that limitation by providing comprehensive access to Apple's development documentation ecosystem, including:
 
 - **Hidden Xcode Documentation**: Searches the `AdditionalDocumentation` folder inside Xcode.app containing advanced SwiftUI patterns, Liquid Glass design guides for iOS 26+, and framework-specific implementation details not available on Apple's public developer site
 - **Apple Developer API**: Fetches and parses structured documentation from developer.apple.com
 - **Swift Evolution Proposals**: Searches 500+ proposals to understand the "why" behind language features
 - **Swift Open Source Repositories**: Searches across all Apple/SwiftLang GitHub repositories for implementation examples
 - **WWDC Session Notes**: Accesses community-curated WWDC session summaries for performance optimization and architecture patterns
+- **Human Interface Guidelines**: Searches through the Human Interface Guidelines
+
+
 
 ## Requirements
 
@@ -140,6 +143,12 @@ After updating the config, restart Claude Desktop to load the MCP server.
 ## Environment Variables
 
 - `XCODE_DOC_PATH`: Override default Xcode documentation search path
+
+## Contributing
+
+This project is provided as-is in its current state. While I've done my best to make it useful for accessing Apple's deeper documentation layers, there may be rough edges or areas for improvement.
+
+Suggestions and pull requests are more than welcome! If you have ideas for new features, find bugs, or want to contribute improvements, please feel free to open an issue or submit a PR.
 
 ## License
 
