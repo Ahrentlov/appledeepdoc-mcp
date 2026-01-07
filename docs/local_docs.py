@@ -202,27 +202,27 @@ class LocalDocsManager:
         
         return f"Document '{name}' not found" + (f" in {xcode_version}" if xcode_version else "")
     
-    def list_documents(self, filter_str: Optional[str] = None) -> List[Dict]:
+    def list_documents(self, filter: Optional[str] = None) -> List[Dict]:
         """
         List all available documentation files.
-        
+
         Args:
-            filter_str: Optional filter string to match document names
-            
+            filter: Optional filter string to match document names
+
         Returns:
             List of documents with metadata
         """
         documents = []
         seen_names = set()
-        
+
         for composite_key, doc_info in self.docs_cache.items():
             doc_name = doc_info["name"]
-            
+
             # Skip duplicates (same doc in multiple Xcode versions)
             if doc_name in seen_names:
                 continue
-            
-            if filter_str and filter_str.lower() not in doc_name.lower():
+
+            if filter and filter.lower() not in doc_name.lower():
                 continue
             
             seen_names.add(doc_name)

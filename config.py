@@ -13,13 +13,41 @@ logger = logging.getLogger(__name__)
 
 class Config:
     """Configuration and state management for the documentation server."""
-    
+
     # Global documentation cache
     DOCS_CACHE: Dict = {}
     DOC_PATHS: List[Path] = []
-    
+
     # Server configuration
     SERVER_NAME = "xcode-doc-server"
+
+    # Tool exposure mode configuration
+    # When CODE_EXECUTION_MODE is True:
+    #   - Only code execution tools are exposed (execute_documentation_code, etc.)
+    #   - Legacy individual tools are hidden
+    # When CODE_EXECUTION_MODE is False (default):
+    #   - Only legacy tools are exposed (search_docs, fetch_apple_documentation, etc.)
+    #   - Code execution tools are hidden
+    # This is configured via environment variable for MCP client setup
+    CODE_EXECUTION_MODE: bool = os.environ.get("CODE_EXECUTION_MODE", "").lower() in ("true", "1", "yes")
+
+    # Computed inverse for convenience
+    @classmethod
+    def legacy_tools_enabled(cls) -> bool:
+        """Returns True if legacy (individual) tools should be exposed."""
+        return not cls.CODE_EXECUTION_MODE
+
+    @classmethod
+    def execution_tools_enabled(cls) -> bool:
+        """Returns True if code execution tools should be exposed."""
+        return cls.CODE_EXECUTION_MODE
+
+    # Sandbox configuration for code execution
+    SANDBOX_ENABLED = True
+    SANDBOX_TIMEOUT_SECONDS = 5
+    SANDBOX_MAX_MEMORY_MB = 50
+    SANDBOX_MAX_OUTPUT_BYTES = 10 * 1024  # 10KB
+    SANDBOX_MAX_CODE_LENGTH = 10000
     
     # Documentation search patterns
     XCODE_PATTERNS = ["Xcode*.app", "Xcode.app"]
