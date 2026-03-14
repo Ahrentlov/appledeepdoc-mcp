@@ -50,10 +50,9 @@ def add_suggestions(results: Dict, tool_name: str, query: str) -> Dict:
     return results
 
 # ============================================================================
-# LOCAL DOCUMENTATION TOOLS
+# LOCAL DOCUMENTATION TOOLS (Legacy Mode)
 # ============================================================================
 
-@mcp.tool()
 def search_docs(query: str, case_sensitive: bool = False) -> Dict:
     """
     Search through Xcode's hidden local documentation for design patterns and implementation guides.
@@ -104,7 +103,6 @@ def search_docs(query: str, case_sensitive: bool = False) -> Dict:
     return add_suggestions(results, "search_docs", query)
 
 
-@mcp.tool()
 def get_document(name: str, xcode_version: Optional[str] = None) -> str:
     """
     Retrieve full content of a local Xcode documentation file.
@@ -129,7 +127,6 @@ def get_document(name: str, xcode_version: Optional[str] = None) -> str:
     return local_docs.get_document(name, xcode_version)
 
 
-@mcp.tool()
 def list_documents(filter: Optional[str] = None) -> List[Dict]:
     """
     List all available Xcode hidden documentation files.
@@ -143,7 +140,6 @@ def list_documents(filter: Optional[str] = None) -> List[Dict]:
     return local_docs.list_documents(filter)
 
 
-@mcp.tool()
 def get_xcode_versions() -> List[str]:
     """
     Get list of installed Xcode versions with hidden documentation.
@@ -155,10 +151,9 @@ def get_xcode_versions() -> List[str]:
 
 
 # ============================================================================
-# APPLE DEVELOPER DOCUMENTATION TOOLS
+# APPLE DEVELOPER DOCUMENTATION TOOLS (Legacy Mode)
 # ============================================================================
 
-@mcp.tool()
 def fetch_apple_documentation(url: str) -> Dict:
     """
     Fetch and parse structured documentation from Apple Developer website.
@@ -230,7 +225,6 @@ def fetch_apple_documentation(url: str) -> Dict:
     return apple_docs.fetch_documentation(url)
 
 
-@mcp.tool()
 def search_apple_online(query: str, platform: Optional[str] = None) -> Dict:
     """
     Search both local Xcode docs and Apple's online documentation.
@@ -281,7 +275,6 @@ def search_apple_online(query: str, platform: Optional[str] = None) -> Dict:
     return combined_results
 
 
-@mcp.tool()
 def get_framework_info(framework: str) -> Dict:
     """
     Get direct documentation URL for an Apple framework.
@@ -302,10 +295,9 @@ def get_framework_info(framework: str) -> Dict:
 
 
 # ============================================================================
-# SWIFT EVOLUTION & LANGUAGE REFERENCE TOOLS  
+# SWIFT EVOLUTION & LANGUAGE REFERENCE TOOLS (Legacy Mode)
 # ============================================================================
 
-@mcp.tool()
 def search_swift_evolution(feature: str) -> Dict:
     """
     Search 500+ Swift Evolution proposals to understand the "why" behind language features.
@@ -323,7 +315,6 @@ def search_swift_evolution(feature: str) -> Dict:
     return add_suggestions(results, "search_swift_evolution", feature)
 
 
-@mcp.tool()
 def get_swift_evolution_proposal(se_number: str) -> Dict:
     """
     Get details of a specific Swift Evolution proposal.
@@ -337,7 +328,6 @@ def get_swift_evolution_proposal(se_number: str) -> Dict:
     return evolution.get_proposal(se_number)
 
 
-@mcp.tool()
 def search_swift_repos(query: str) -> Dict:
     """
     Search across all Apple and SwiftLang open source Swift repositories.
@@ -373,7 +363,6 @@ def search_swift_repos(query: str) -> Dict:
     return add_suggestions(results, "search_swift_repos", query)
 
 
-@mcp.tool()
 def fetch_github_file(url: str) -> Dict:
     """
     Fetch source code from Apple or SwiftLang GitHub repositories.
@@ -424,10 +413,9 @@ def fetch_github_file(url: str) -> Dict:
 
 
 # ============================================================================
-# WWDC SESSION NOTES & TRANSCRIPTS
+# WWDC SESSION NOTES & TRANSCRIPTS (Legacy Mode)
 # ============================================================================
 
-@mcp.tool()
 def search_wwdc_notes(query: str) -> Dict:
     """
     Search WWDC session notes for topics not in regular documentation.
@@ -445,7 +433,6 @@ def search_wwdc_notes(query: str) -> Dict:
     return add_suggestions(results, "search_wwdc_notes", query)
 
 
-@mcp.tool()
 def get_wwdc_session(session_id: str) -> Dict:
     """
     Get WWDC session URLs from session ID.
@@ -460,10 +447,9 @@ def get_wwdc_session(session_id: str) -> Dict:
 
 
 # ============================================================================
-# HUMAN INTERFACE GUIDELINES TOOLS
+# HUMAN INTERFACE GUIDELINES TOOLS (Legacy Mode)
 # ============================================================================
 
-@mcp.tool()
 def search_human_interface_guidelines(query: str, platform: Optional[str] = None) -> Dict:
     """
     Search Apple's Human Interface Guidelines for design patterns and best practices.
@@ -517,7 +503,6 @@ def search_human_interface_guidelines(query: str, platform: Optional[str] = None
     return add_suggestions(results, "search_human_interface_guidelines", query)
 
 
-@mcp.tool()
 def list_human_interface_guidelines_platforms() -> List[Dict]:
     """
     List all Apple platforms with their Human Interface Guidelines links.
@@ -526,3 +511,285 @@ def list_human_interface_guidelines_platforms() -> List[Dict]:
         List of platforms with URLs to their specific design guidelines
     """
     return human_interface_guidelines.list_platforms()
+
+
+# ============================================================================
+# CODE EXECUTION & DISCOVERY TOOLS (Execution Mode)
+# ============================================================================
+# These tools implement the "Code Execution with MCP" pattern from Anthropic's
+# engineering blog, enabling lazy tool discovery and sandboxed code execution.
+# Only exposed when CODE_EXECUTION_MODE=true
+
+# Lazy initialization for execution mode dependencies
+_sandbox = None
+_tool_filesystem = None
+
+
+def _init_execution_mode():
+    """Initialize execution mode dependencies (lazy loading)."""
+    global _sandbox, _tool_filesystem
+
+    if _sandbox is not None:
+        return  # Already initialized
+
+    from execution.sandbox import SandboxExecutor
+    from execution.api_bridge import documentation_api
+    from discovery.tool_filesystem import tool_filesystem
+
+    _tool_filesystem = tool_filesystem
+
+    # API handlers for the sandbox - these get called via IPC when sandbox code
+    # calls functions like fetch_documentation(), search_proposals(), etc.
+    api_handlers = {
+        # Apple Documentation
+        "fetch_documentation": documentation_api.fetch_documentation,
+        "search_apple_online": documentation_api.search_apple_online,
+        "get_framework_info": documentation_api.get_framework_info,
+        # Swift Evolution
+        "search_proposals": documentation_api.search_proposals,
+        "get_proposal": documentation_api.get_proposal,
+        # Local Xcode Docs
+        "search_docs": documentation_api.search_docs,
+        "get_document": documentation_api.get_document,
+        "list_documents": documentation_api.list_documents,
+        "get_xcode_versions": documentation_api.get_xcode_versions,
+        # Swift Repos
+        "search_swift_repos": documentation_api.search_swift_repos,
+        "fetch_github_file": documentation_api.fetch_github_file,
+        # WWDC Notes
+        "search_wwdc_notes": documentation_api.search_wwdc_notes,
+        "get_wwdc_session": documentation_api.get_wwdc_session,
+        # Human Interface Guidelines
+        "search_hig": documentation_api.search_hig,
+        "list_hig_platforms": documentation_api.list_hig_platforms,
+    }
+
+    # Initialize sandbox with configuration and API handlers
+    _sandbox = SandboxExecutor(
+        timeout=Config.SANDBOX_TIMEOUT_SECONDS,
+        max_memory_mb=Config.SANDBOX_MAX_MEMORY_MB,
+        max_output_bytes=Config.SANDBOX_MAX_OUTPUT_BYTES,
+        api_handlers=api_handlers
+    )
+
+
+def list_tool_directory(path: str = "/tools") -> Dict:
+    """
+    List contents of the tool filesystem directory.
+
+    Navigate the tool filesystem to discover available documentation APIs.
+    Start with "/tools" to see available tool categories.
+
+    This enables lazy tool discovery - explore the structure on-demand
+    rather than loading all definitions upfront.
+
+    Args:
+        path: Directory path to list (e.g., "/tools", "/tools/apple_documentation")
+
+    Returns:
+        Dictionary containing:
+        - path: Current directory path
+        - entries: List of files/directories with type and description
+    """
+    _init_execution_mode()
+    return _tool_filesystem.list_directory(path)
+
+
+def read_tool_definition(path: str) -> Dict:
+    """
+    Read a tool definition file to understand its interface.
+
+    Use this to discover function signatures, parameters, return types,
+    and usage examples before writing code for execute_documentation_code.
+
+    Args:
+        path: Path to tool definition file
+              (e.g., "/tools/apple_documentation/fetch_documentation.py")
+
+    Returns:
+        Dictionary containing:
+        - path: File path
+        - content: Full file content with interface definition
+        - name: File name
+        - language: Programming language (for .py files)
+        - parameters_doc: Parameter documentation (if available)
+        - returns_doc: Return value documentation (if available)
+    """
+    # Security: Prevent path traversal
+    if ".." in path:
+        return {
+            "error": "Invalid path",
+            "message": "Path traversal is not allowed"
+        }
+
+    _init_execution_mode()
+    return _tool_filesystem.read_file(path)
+
+
+def execute_documentation_code(code: str) -> Dict:
+    """
+    Execute Python code in a sandboxed environment with documentation API access.
+
+    This tool enables you to write code that fetches and processes documentation
+    data, reducing token overhead by filtering results before they're returned.
+
+    Available functions in the sandbox:
+
+    Apple Documentation:
+    - fetch_documentation(url: str) -> Dict: Fetch Apple Developer documentation
+    - search_apple_online(query: str, platform?: str) -> Dict: Search Apple docs online
+    - get_framework_info(framework: str) -> Dict: Get framework documentation URL
+
+    Swift Evolution:
+    - search_proposals(feature: str) -> Dict: Search Swift Evolution proposals
+    - get_proposal(se_number: str) -> Dict: Get specific proposal details
+
+    Local Xcode Docs:
+    - search_docs(query: str, case_sensitive?: bool) -> Dict: Search local Xcode docs
+    - get_document(name: str, xcode_version?: str) -> Dict: Get document content
+    - list_documents(filter?: str) -> List: List available documents
+    - get_xcode_versions() -> List: Get installed Xcode versions
+
+    Swift Repos:
+    - search_swift_repos(query: str) -> Dict: Search Apple/SwiftLang GitHub repos
+    - fetch_github_file(url: str) -> Dict: Fetch file from GitHub
+
+    WWDC Notes:
+    - search_wwdc_notes(query: str) -> Dict: Search WWDC session notes
+    - get_wwdc_session(session_id: str) -> Dict: Get WWDC session info
+
+    Human Interface Guidelines:
+    - search_hig(query: str, platform?: str) -> Dict: Search HIG
+    - list_hig_platforms() -> List: List HIG platforms
+
+    Available builtins:
+    - Data types: list, dict, set, tuple, str, int, float, bool, bytes
+    - Iteration: len, range, enumerate, zip, map, filter, reversed, sorted
+    - Aggregation: min, max, sum, any, all
+    - Math: abs, round, pow
+    - Type checking: isinstance, type
+    - Output: print, repr
+
+    IMPORTANT: Your code must assign the final result to a variable named 'result'.
+
+    Example:
+        ```python
+        # Fetch documentation and extract specific fields
+        doc = fetch_documentation("https://developer.apple.com/documentation/swiftui/view")
+        result = {
+            "title": doc.get("title"),
+            "declaration": doc.get("declaration")
+        }
+        ```
+
+        ```python
+        # Search proposals and filter to Swift 6
+        data = search_proposals("async")
+        swift6 = [p for p in data.get("proposals", []) if "6" in p.get("version", "")]
+        result = {"count": len(swift6), "proposals": swift6[:5]}
+        ```
+
+    Args:
+        code: Python code to execute. Must assign result to 'result' variable.
+
+    Returns:
+        Dictionary containing:
+        - success: Whether execution completed successfully
+        - result: Value of 'result' variable (your processed data)
+        - stdout: Any print() output from your code
+        - error: Error message if execution failed
+        - error_type: Type of error (ValidationError, TimeoutError, etc.)
+        - execution_time_ms: Time taken to execute
+        - validation_warnings: Any warnings from code validation
+    """
+    # Validate code length
+    if not code or not code.strip():
+        return {
+            "success": False,
+            "error": "Empty code provided",
+            "error_type": "ValidationError"
+        }
+
+    if len(code) > Config.SANDBOX_MAX_CODE_LENGTH:
+        return {
+            "success": False,
+            "error": f"Code too long: {len(code)} chars (max {Config.SANDBOX_MAX_CODE_LENGTH})",
+            "error_type": "ValidationError"
+        }
+
+    # Initialize sandbox on first use
+    _init_execution_mode()
+
+    # Execute in sandbox with IPC-based API access
+    # The sandbox uses subprocess isolation with stdin/stdout IPC for API calls,
+    # allowing dynamic/chained calls like: get_proposal(search_results["proposals"][0]["se"])
+    result = _sandbox.execute(code)
+
+    return result.to_dict()
+
+
+# ============================================================================
+# CONDITIONAL TOOL REGISTRATION
+# ============================================================================
+# Register tools based on CODE_EXECUTION_MODE configuration.
+# - Legacy mode (default): Individual documentation tools exposed
+# - Execution mode: Only code execution sandbox tools exposed
+
+# Legacy tools - individual documentation access tools
+_LEGACY_TOOLS = [
+    # Local Documentation
+    search_docs,
+    get_document,
+    list_documents,
+    get_xcode_versions,
+    # Apple Developer Documentation
+    fetch_apple_documentation,
+    search_apple_online,
+    get_framework_info,
+    # Swift Evolution
+    search_swift_evolution,
+    get_swift_evolution_proposal,
+    # Swift Repos
+    search_swift_repos,
+    fetch_github_file,
+    # WWDC Notes
+    search_wwdc_notes,
+    get_wwdc_session,
+    # Human Interface Guidelines
+    search_human_interface_guidelines,
+    list_human_interface_guidelines_platforms,
+]
+
+# Execution tools - sandbox-based code execution
+_EXECUTION_TOOLS = [
+    list_tool_directory,
+    read_tool_definition,
+    execute_documentation_code,
+]
+
+
+def _register_tools():
+    """
+    Register tools based on configuration mode.
+
+    This function is called at module load time to register the appropriate
+    set of tools with the MCP server based on CODE_EXECUTION_MODE.
+    """
+    from config import logger
+
+    if Config.execution_tools_enabled():
+        # Code execution mode - register only sandbox tools
+        logger.info("Tool mode: CODE_EXECUTION (sandbox tools only)")
+        for tool_func in _EXECUTION_TOOLS:
+            mcp.tool()(tool_func)
+            logger.debug(f"  Registered: {tool_func.__name__}")
+    else:
+        # Legacy mode (default) - register individual documentation tools
+        logger.info("Tool mode: LEGACY (individual documentation tools)")
+        for tool_func in _LEGACY_TOOLS:
+            mcp.tool()(tool_func)
+            logger.debug(f"  Registered: {tool_func.__name__}")
+
+
+# Register tools on module load
+_register_tools()

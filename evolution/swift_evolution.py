@@ -23,6 +23,9 @@ import json
 import time
 from typing import Dict, Optional, List
 
+# Threshold for sparse results - triggers GitHub deep search suggestion
+SPARSE_RESULTS_THRESHOLD = 3
+
 class SwiftEvolution:
     """
     Search and analyze Swift Evolution proposals using swift.org data feed.
@@ -40,6 +43,8 @@ class SwiftEvolution:
     EVOLUTION_JSON_URL = "https://download.swift.org/swift-evolution/v1/evolution.json"
     GITHUB_WEB_BASE = "https://github.com/swiftlang/swift-evolution"
     GITHUB_RAW_BASE = "https://raw.githubusercontent.com/swiftlang/swift-evolution/main/proposals"
+    # GitHub code search scoped to proposals directory
+    GITHUB_SEARCH_BASE = "https://github.com/search"
 
     def __init__(self):
         """Initialize with empty cache and TTL settings."""
@@ -162,11 +167,49 @@ class SwiftEvolution:
         # Sort by relevance score (highest first)
         results.sort(key=lambda x: x['relevance_score'], reverse=True)
 
-        return {
+        response = {
             'feature': feature,
             'total_found': len(results),
             'proposals': results[:20],  # Top 20 results
             'available_versions': data.get('implementationVersions', [])
+        }
+
+        # If sparse results, add GitHub deep search fallback
+        # This searches the full proposal text, not just metadata
+        if len(results) < SPARSE_RESULTS_THRESHOLD:
+            response['deep_search'] = self._generate_deep_search(feature, len(results))
+
+        return response
+
+    def _generate_deep_search(self, query: str, metadata_count: int) -> Dict:
+        """
+        Generate GitHub deep search URLs when metadata search returns sparse results.
+
+        GitHub's code search indexes the full text of all proposals, so it can find
+        terms like @concurrent that only appear in the proposal body, not the
+        title/summary metadata.
+
+        Args:
+            query: The original search term
+            metadata_count: Number of results found in metadata search
+
+        Returns:
+            Dictionary with search URLs and explanatory notes
+        """
+        # URL-encode the query for safe inclusion in URLs
+        encoded_query = urllib.parse.quote(query)
+
+        # Build GitHub code search URL scoped to proposals directory
+        github_search_url = (
+            f"{self.GITHUB_SEARCH_BASE}?q={encoded_query}"
+            f"+repo:swiftlang/swift-evolution+path:proposals&type=code"
+        )
+
+        return {
+            'reason': f"Only {metadata_count} result(s) found in proposal titles/summaries.",
+            'suggestion': "The term may appear in proposal body text. Try GitHub deep search:",
+            'github_url': github_search_url,
+            'note': "GitHub searches full proposal markdown, including code examples and detailed design sections."
         }
 
     def get_proposal(self, se_number: str) -> Dict:

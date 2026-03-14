@@ -143,6 +143,87 @@ After updating the config, restart Claude Desktop to load the MCP server.
 ## Environment Variables
 
 - `XCODE_DOC_PATH`: Override default Xcode documentation search path
+- `CODE_EXECUTION_MODE`: Set to `true` to enable experimental code execution mode (see below)
+
+## Experimental: Code Execution Mode
+
+> Based on the approach described in [Code Execution with MCP: Building More Efficient Agents](https://www.anthropic.com/engineering/code-execution-with-mcp) from Anthropic Engineering.
+
+This server also supports an alternative approach that replaces the 15+ individual MCP tools with a **sandboxed Python execution environment**. Instead of receiving large JSON responses and processing them externally, LLMs write Python code that fetches and filters data directly—significantly reducing token usage.
+
+### Why Code Execution?
+
+The standard mode exposes 15+ tools, each returning full JSON responses. For example, searching Swift Evolution proposals returns the entire matching dataset. With code execution mode:
+
+1. **Fewer tools** - Only 3 tools instead of 15+, reducing tool listing overhead
+2. **Filtered results** - LLMs write code to extract exactly what they need
+3. **Composable queries** - Combine multiple API calls and filter in a single execution
+
+### Available Tools in Code Execution Mode
+
+| Tool | Purpose |
+|------|---------|
+| `list_tool_directory` | Browse the virtual filesystem to discover available APIs |
+| `read_tool_definition` | Read function signatures and usage examples |
+| `execute_documentation_code` | Run Python code in a sandboxed environment |
+
+### Security Model
+
+The sandbox provides defense-in-depth:
+- **AST validation** - Blocks imports, `exec`, `eval`, and dangerous builtins
+- **Subprocess isolation** - Code runs in a separate process
+- **Resource limits** - 5 second timeout, 50MB memory limit
+- **Restricted namespace** - Only safe builtins and documentation APIs available
+
+### Enabling Code Execution Mode
+
+Add the `CODE_EXECUTION_MODE` environment variable to your MCP configuration:
+
+**Claude Code:**
+```bash
+claude mcp add apple-deep-docs-exec /path/to/appledeepdoc-mcp/run.sh --env CODE_EXECUTION_MODE=true
+```
+
+**Claude Desktop:**
+```json
+{
+  "mcpServers": {
+    "apple-deep-docs-exec": {
+      "command": "/path/to/appledeepdoc-mcp/run.sh",
+      "env": {
+        "CODE_EXECUTION_MODE": "true"
+      }
+    }
+  }
+}
+```
+
+### Example: Filtering Swift Evolution Proposals
+
+Instead of calling `search_swift_evolution` and receiving a large JSON response, the LLM executes:
+
+```python
+# Executed in sandbox via execute_documentation_code
+proposals = search_proposals('async')
+swift6 = [p for p in proposals.get('proposals', [])
+          if p.get('version', '').startswith('6')]
+result = {'swift6_async': swift6[:5], 'count': len(swift6)}
+```
+
+The LLM receives only the filtered 5 proposals, not the entire matching dataset.
+
+### Available APIs in Sandbox
+
+All documentation sources are available as functions:
+
+| API | Functions |
+|-----|-----------|
+| **Apple Developer Docs** | `fetch_documentation(url)`, `search_apple_online(query)`, `get_framework_info(name)` |
+| **Swift Evolution** | `search_proposals(feature)`, `get_proposal(se_number)` |
+| **Local Xcode Docs** | `search_docs(query)`, `get_document(name)`, `list_documents()`, `get_xcode_versions()` |
+| **GitHub Repos** | `search_swift_repos(query)`, `fetch_github_file(url)` |
+| **WWDC Sessions** | `search_wwdc_notes(query)`, `get_wwdc_session(session_id)` |
+| **Human Interface Guidelines** | `search_hig(query)`, `list_hig_platforms()` |
 
 ## Contributing
 

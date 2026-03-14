@@ -1,10 +1,18 @@
 #!/usr/bin/env python3
 """
 Main entry point for Xcode Documentation MCP Server.
+
+Tool Modes:
+- LEGACY (default): Exposes individual documentation tools
+  (search_docs, fetch_apple_documentation, etc.)
+- CODE_EXECUTION: Exposes sandbox-based code execution tools
+  (execute_documentation_code, list_tool_directory, read_tool_definition)
+
+Set CODE_EXECUTION_MODE=true environment variable to switch modes.
 """
 
 import sys
-from config import logger
+from config import logger, Config
 from tools import mcp
 
 
@@ -13,6 +21,19 @@ def main():
     try:
         # Modules initialize themselves on import
         logger.info("Initializing Apple Documentation MCP Server...")
+
+        # Log active tool mode
+        if Config.execution_tools_enabled():
+            logger.info("═══════════════════════════════════════════════════════")
+            logger.info("  Tool Mode: CODE_EXECUTION (sandbox tools only)")
+            logger.info("  Set CODE_EXECUTION_MODE=false for legacy tools")
+            logger.info("═══════════════════════════════════════════════════════")
+        else:
+            logger.info("═══════════════════════════════════════════════════════")
+            logger.info("  Tool Mode: LEGACY (individual documentation tools)")
+            logger.info("  Set CODE_EXECUTION_MODE=true for sandbox execution")
+            logger.info("═══════════════════════════════════════════════════════")
+
         logger.info("Loading modules:")
         logger.info("  ✓ Local documentation search (docs/local_docs.py)")
         logger.info("  ✓ Apple API fetching (docs/apple_docs.py)")
