@@ -68,6 +68,14 @@ class CodeValidator:
         (r'\bsubprocess\s*\.', "subprocess module access is not allowed"),
     ]
 
+    # Functions blocked from sandbox execution
+    BLOCKED_FUNCTIONS = {
+        'exec', 'eval', 'compile', 'open',
+        'getattr', 'setattr', 'delattr', 'hasattr',
+        'globals', 'locals', 'vars', 'dir',
+        'breakpoint', 'input', '__import__',
+    }
+
     # Allowed builtins that will be available in sandbox
     ALLOWED_BUILTINS = {
         # Type constructors
@@ -158,30 +166,18 @@ class CodeValidator:
         errors = []
 
         for node in ast.walk(tree):
-            # Block import statements
-            if isinstance(node, (ast.Import, ast.ImportFrom)):
-                errors.append("Import statements are not allowed")
+            match node:
+                case ast.Import() | ast.ImportFrom():
+                    errors.append("Import statements are not allowed")
 
-            # Block dangerous function calls
-            elif isinstance(node, ast.Call):
-                if isinstance(node.func, ast.Name):
-                    func_name = node.func.id
-                    if func_name in ('exec', 'eval', 'compile', 'open',
-                                    'getattr', 'setattr', 'delattr', 'hasattr',
-                                    'globals', 'locals', 'vars', 'dir',
-                                    'breakpoint', 'input', '__import__'):
-                        errors.append(f"Function '{func_name}' is not allowed")
+                case ast.Call(func=ast.Name(id=func_name)) if func_name in self.BLOCKED_FUNCTIONS:
+                    errors.append(f"Function '{func_name}' is not allowed")
 
-            # Block attribute access to dunder methods
-            elif isinstance(node, ast.Attribute):
-                if node.attr.startswith('__') and node.attr.endswith('__'):
-                    errors.append(f"Dunder attribute access '{node.attr}' is not allowed")
+                case ast.Attribute(attr=attr) if attr.startswith('__') and attr.endswith('__'):
+                    errors.append(f"Dunder attribute access '{attr}' is not allowed")
 
-            # Block lambda with complex expressions (could hide dangerous calls)
-            # Allow simple lambdas for filter/map usage
-            elif isinstance(node, ast.Lambda):
-                lambda_errors = self._validate_ast(node.body)
-                errors.extend(lambda_errors)
+                case ast.Lambda(body=body):
+                    errors.extend(self._validate_ast(body))
 
         return errors
 

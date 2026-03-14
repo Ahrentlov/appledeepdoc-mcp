@@ -324,6 +324,20 @@ sys.stdout.flush()
             user_code=escaped_code
         )
 
+    def _handle_api_call(self, data: Dict, handlers: Dict[str, Callable]) -> Dict:
+        """Execute an API call from the sandbox and return the IPC response."""
+        call_info = data["__api_call__"]
+        func_name = call_info["func"]
+        args = call_info["args"]
+
+        if func_name not in handlers:
+            return {"error": f"Unknown API function: {func_name}"}
+
+        try:
+            return {"result": handlers[func_name](*args)}
+        except Exception as e:
+            return {"error": str(e)}
+
     def _run_with_ipc(self, script: str, handlers: Dict[str, Callable]) -> ExecutionResult:
         """
         Run sandbox with IPC for API calls.
@@ -362,60 +376,55 @@ sys.stdout.flush()
 
             # Process IPC until completion or timeout
             deadline = time.time() + self.timeout
+            result_line = None
 
             while True:
                 if time.time() > deadline:
                     proc.kill()
                     raise subprocess.TimeoutExpired(cmd=script_path, timeout=self.timeout)
 
-                # Read line from subprocess stdout
                 line = proc.stdout.readline()
                 if not line:
-                    # Process ended
                     break
 
                 line = line.strip()
 
-                # Check for completion marker
                 if line == "__SANDBOX_COMPLETE__":
-                    # Next line is the final result
                     result_line = proc.stdout.readline()
                     break
 
                 # Try to parse as API call
+                api_call = None
                 try:
                     data = json.loads(line)
                     if "__api_call__" in data:
-                        api_calls_made += 1
-                        call_info = data["__api_call__"]
-                        func_name = call_info["func"]
-                        args = call_info["args"]
-
-                        # Execute the API call
-                        if func_name in handlers:
-                            try:
-                                result = handlers[func_name](*args)
-                                response = {"result": result}
-                            except Exception as e:
-                                response = {"error": str(e)}
-                        else:
-                            response = {"error": f"Unknown API function: {func_name}"}
-
-                        # Send response back to subprocess
-                        proc.stdin.write(json.dumps(response) + "\n")
-                        proc.stdin.flush()
-                        continue
+                        api_call = data
                 except json.JSONDecodeError:
                     pass
 
-                # Regular output line
-                collected_output.append(line)
+                if api_call:
+                    api_calls_made += 1
+                    response = self._handle_api_call(api_call, handlers)
+                    proc.stdin.write(json.dumps(response) + "\n")
+                    proc.stdin.flush()
+                else:
+                    collected_output.append(line)
 
             # Wait for process to finish
             proc.wait(timeout=1)
             stderr = proc.stderr.read()
 
             # Parse final result
+            if result_line is None:
+                return ExecutionResult(
+                    success=False,
+                    stdout="\n".join(collected_output),
+                    stderr=stderr,
+                    error="Sandbox process exited without completing (possible resource limit or crash)",
+                    error_type="ProcessError",
+                    api_calls_made=api_calls_made
+                )
+
             try:
                 output = json.loads(result_line)
                 return ExecutionResult(
@@ -427,7 +436,7 @@ sys.stdout.flush()
                     error_type=output.get("error_type"),
                     api_calls_made=api_calls_made
                 )
-            except (json.JSONDecodeError, UnboundLocalError):
+            except json.JSONDecodeError:
                 return ExecutionResult(
                     success=False,
                     stdout="\n".join(collected_output),
