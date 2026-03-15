@@ -1,3 +1,5 @@
+> Available as an [Agent Skill](https://github.com/Ahrentlov/apple-docs-skill) — no MCP server setup required.
+
 # Apple Deep Docs MCP
 
 Access hidden Xcode documentation and Apple developer resources through the Model Context Protocol.
